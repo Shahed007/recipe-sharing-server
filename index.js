@@ -46,6 +46,7 @@ const main = async () => {
 
       const recipesShare = client.db("recipeShare");
       const userCollection = recipesShare.collection("userCollection");
+      const recipeCollection = recipesShare.collection("recipeCollection");
 
       // user create route
       app.post("/user", async (req, res) => {
@@ -85,6 +86,36 @@ const main = async () => {
           }
         } catch (error) {
           console.error("This error happen on user get route: ", error);
+        }
+      });
+
+      // insert recipe route
+      app.post("/recipe", async (req, res) => {
+        const recipe = req.body;
+
+        const creatorEmail = recipe.creatorEmail;
+
+        try {
+          const result = await recipeCollection.insertOne(recipe);
+          if (result.acknowledged && creatorEmail) {
+            const increaseCoin = await userCollection.updateOne(
+              { email: creatorEmail },
+              { $inc: { coins: 1 } }
+            );
+            increaseCoin.matchedCount > 0
+              ? res
+                  .status(201)
+                  .send({
+                    add_recipe_message: "Recipe published successfully",
+                    coin_increase_message: "Congrats you get 1 coin",
+                  })
+              : res.status(404).send({ message: "User not found" });
+          } else {
+            res.status(400).send({ message: "Bad request" });
+          }
+        } catch (error) {
+          console.error("This error happens on recipe insert route: ", error);
+          res.status(500).send("Internal server error");
         }
       });
 
