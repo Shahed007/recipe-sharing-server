@@ -103,12 +103,10 @@ const main = async () => {
               { $inc: { coins: 1 } }
             );
             increaseCoin.matchedCount > 0
-              ? res
-                  .status(201)
-                  .send({
-                    add_recipe_message: "Recipe published successfully",
-                    coin_increase_message: "Congrats you get 1 coin",
-                  })
+              ? res.status(201).send({
+                  add_recipe_message: "Recipe published successfully",
+                  coin_increase_message: "Congrats you get 1 coin",
+                })
               : res.status(404).send({ message: "User not found" });
           } else {
             res.status(400).send({ message: "Bad request" });
@@ -118,6 +116,27 @@ const main = async () => {
           res.status(500).send("Internal server error");
         }
       });
+
+      // get single recipe
+      app.get("/recipe/:title", async (req, res) => {
+        const title = req.params.title;
+        try {
+          const recipe = await recipeCollection.findOne({ recipe_name: title });
+          if (recipe) {
+            const updatedWatchCount = await recipeCollection.updateOne(
+              { recipe_name: title },
+              { $inc: { watchCount: 1 } }
+            );
+            res.status(200).send(recipe);
+          } else {
+            res.status(404).send("Recipe not found");
+          }
+        } catch (error) {
+          console.error("This error happens on get single recipe route: ", error);
+          res.status(500).send("Internal server error");
+        }
+      });
+      
 
       app.get("/health", (req, res) => {
         res.send({ message: "My server is running" });
