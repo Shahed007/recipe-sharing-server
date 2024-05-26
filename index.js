@@ -117,6 +117,38 @@ const main = async () => {
         }
       });
 
+      // get all recipes
+      app.get("/recipes", async (req, res) => {
+        try {
+          const recipes = await recipeCollection.find({}).toArray();
+          res.send(recipes);
+        } catch (error) {
+          console.error("This error happens on get all recipes route", error);
+        }
+      });
+
+      // get specific product details
+      app.get('/publicRecipe', async (req, res) => {
+        const projection = {
+           
+            recipe_name: 1,
+            purchased_by: 1,
+            creatorEmail: 1,
+            country: 1,
+            watchCount: 1,
+        };
+    
+        try {
+            const result = await recipeCollection.find({}, { projection: projection }).toArray();
+            res.status(200).send(result);
+        } 
+        catch (error) {
+            console.error("This error happens when public recipe route: ", error);
+            res.status(500).send("Internal Server Error");
+        }
+    });
+    
+
       // get single recipe
       app.get("/recipe/:title", async (req, res) => {
         const title = req.params.title;
@@ -132,11 +164,13 @@ const main = async () => {
             res.status(404).send("Recipe not found");
           }
         } catch (error) {
-          console.error("This error happens on get single recipe route: ", error);
+          console.error(
+            "This error happens on get single recipe route: ",
+            error
+          );
           res.status(500).send("Internal server error");
         }
       });
-      
 
       app.get("/health", (req, res) => {
         res.send({ message: "My server is running" });
