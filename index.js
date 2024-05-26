@@ -15,8 +15,6 @@ app.use(
 
 app.use(express.json());
 
-
-
 // app.all("*", (req, res, next) => {
 //   const error = new Error(`the requested url is invalid :${req.url}`);
 //   error.status = 404;
@@ -49,7 +47,7 @@ const main = async () => {
       const recipesShare = client.db("recipeShare");
       const userCollection = recipesShare.collection("userCollection");
 
-      // user route
+      // user create route
       app.post("/user", async (req, res) => {
         const { displayName, photoURL, email } = req.body;
 
@@ -73,6 +71,22 @@ const main = async () => {
         }
       });
 
+      // user get route
+      app.get("/user", async (req, res) => {
+        const email = req.query.email;
+
+        try {
+          if (email) {
+            const user = await userCollection.findOne({ email });
+            res.status(200).send(user);
+          } else {
+            const users = await userCollection.find({}).toArray();
+            res.status(200).send(users);
+          }
+        } catch (error) {
+          console.error("This error happen on user get route: ", error);
+        }
+      });
 
       app.get("/health", (req, res) => {
         res.send({ message: "My server is running" });
