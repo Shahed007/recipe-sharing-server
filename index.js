@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const stripe = require("stripe");
 const app = express();
 require("dotenv").config();
 const port = process.env.PORT || 500;
@@ -128,26 +129,41 @@ const main = async () => {
       });
 
       // get specific product details
-      app.get('/publicRecipe', async (req, res) => {
+      app.get("/publicRecipe", async (req, res) => {
         const projection = {
-           
-            recipe_name: 1,
-            purchased_by: 1,
-            creatorEmail: 1,
-            country: 1,
-            watchCount: 1,
+          recipe_name: 1,
+          purchased_by: 1,
+          creatorEmail: 1,
+          country: 1,
+          watchCount: 1,
         };
-    
+
         try {
-            const result = await recipeCollection.find({}, { projection: projection }).toArray();
-            res.status(200).send(result);
-        } 
-        catch (error) {
-            console.error("This error happens when public recipe route: ", error);
-            res.status(500).send("Internal Server Error");
+          const result = await recipeCollection
+            .find({}, { projection: projection })
+            .toArray();
+          res.status(200).send(result);
+        } catch (error) {
+          console.error("This error happens when public recipe route: ", error);
+          res.status(500).send("Internal Server Error");
         }
-    });
-    
+      });
+
+      // payment api route
+      app.post("/create-paymentIntent", async (req, res) => {
+        const { price } = req.body;
+        const amount = parseInt(price * 100);
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "usd",
+
+          payment_method_types: ["card"],
+        });
+
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      });
 
       // get single recipe
       app.get("/recipe/:title", async (req, res) => {
